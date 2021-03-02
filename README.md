@@ -5,6 +5,8 @@ Practical Assignments (just starter code) for [CS451: Machine Learning](https://
 
 I am not bothered if you fork and push your solutions to github; none of these practicals are supposed to be overly complex.
 
+I recommend it, actually for most setups.
+
 ## Opening in repl.it
 
 The repl.it link to this repo is here:
