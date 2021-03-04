@@ -2,7 +2,7 @@
 In this lab, we'll go ahead and use the sklearn API to learn a decision tree over some actual data!
 
 Documentation:
-https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
+https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 
 We'll need to install sklearn.
 Either use the GUI, or use pip:
@@ -93,7 +93,7 @@ print("Score on Testing: {:.3f}".format(f.score(test_X, test_y)))
 TODO(
     "1. Figure out what all of the parameters I listed for the DecisionTreeClassifier do."
 )
-# Consult the documentation: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html
+# Consult the documentation: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
 TODO("2. Pick one parameter, vary it, and find some version of the 'best' setting.")
 # Default performance:
 # There are 2079 training examples and 693 testing examples.
