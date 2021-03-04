@@ -1,11 +1,15 @@
 # This 'shared.py' will be imported from in our practicals going forward (sometimes, anyway).
 import os
 import urllib.request
+import sys
 
 
 def TODO(for_what: str) -> None:
     """Because crashing should be legible."""
-    raise ValueError("TODO: {}".format(for_what))
+    print("=" * 80)
+    print("TODO:", for_what, file=sys.stderr)
+    print("=" * 80)
+    sys.exit(-1)
 
 
 def __create_data_directory():
@@ -29,6 +33,10 @@ def dataset_local_path(name: str) -> str:
         __download_file(
             "https://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv",
             destination,
+        )
+    elif name == "poetry_id.jsonl":
+        __download_file(
+            "https://ciir.cs.umass.edu/downloads/poetry/id_datasets.jsonl", destination
         )
     else:
         raise ValueError("No such dataset... {}; should you git pull?".format(name))
