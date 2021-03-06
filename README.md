@@ -19,7 +19,29 @@ https://repl.it/@jjfoley/cs451-practicals
 ```bash
 python3 -m venv venv
 source venv/bin/activate
+pip install -U pip # update pip
 pip install black # the formatter repl.it and I really like
+pip install -r requirements.txt
+```
+
+## Setting up a virtualenv: Windows 10
+
+Install Python from https://www.python.org/downloads/windows/
+Make sure you allow it to edit your path and install the 'py' launcher.
+
+In POWERSHELL:
+
+```pwsh
+py -m venv venv
+& venv/Scripts/Activate.ps1 # may need to change permissions
+pip install -U pip # update pip
+pip install black # the formatter repl.it and I really like
+pip install -r requirements.txt
+```
+
+I had to change the execution policy, a security setting; theoretically this leaves you less safe, as it will allow you to run powershell without admin privileges... I think. [You can read about alternatives here on StackOverflow](https://stackoverflow.com/questions/18713086/virtualenv-wont-activate-on-windows).
+```
+Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser
 ```
 
 ## Setting up in vscode
