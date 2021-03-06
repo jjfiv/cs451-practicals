@@ -34,10 +34,12 @@ In POWERSHELL:
 ```pwsh
 py -m venv venv
 & venv/Scripts/Activate.ps1 # may need to change permissions
-pip install -U pip # update pip
-pip install black # the formatter repl.it and I really like
-pip install -r requirements.txt
+pip.exe install -U pip # update pip
+pip.exe install black # the formatter repl.it and I really like
+pip.exe install -r requirements.txt
 ```
+
+Note that pip is a script on Windows which likely points to your global python and not the local virtualenv we just created.
 
 I had to change the execution policy, a security setting; theoretically this leaves you less safe, as it will allow you to run powershell without admin privileges... I think. [You can read about alternatives here on StackOverflow](https://stackoverflow.com/questions/18713086/virtualenv-wont-activate-on-windows).
 ```
