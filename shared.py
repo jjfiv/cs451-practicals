@@ -18,11 +18,14 @@ def __create_data_directory():
 
 
 def __download_file(url: str, path: str):
+    # empty data files were mis-downloaded...
     if os.path.getsize(path) > 0 and os.path.exists(path):
         # don't download multiple times.
         return
-    with open(path, "w") as out:
-        with urllib.request.urlopen(url) as f:
+    # try connecting before creating output file...
+    with urllib.request.urlopen(url) as f:
+        # create output file and download the rest.
+        with open(path, "w") as out:
             out.write(f.read().decode("utf-8"))
 
 
