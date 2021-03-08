@@ -19,7 +19,7 @@ def __create_data_directory():
 
 def __download_file(url: str, path: str):
     # empty data files were mis-downloaded...
-    if os.path.getsize(path) > 0 and os.path.exists(path):
+    if os.path.exists(path) and os.path.getsize(path) > 0:
         # don't download multiple times.
         return
     # try connecting before creating output file...
