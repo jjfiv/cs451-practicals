@@ -75,7 +75,6 @@ X_train, X_vali, y_train, y_vali = train_test_split(
 # In this lab, we'll ignore test data, for the most part.
 
 #%% DecisionTree Parameters:
-
 params = {
     "criterion": "gini",
     "splitter": "best",
@@ -117,7 +116,7 @@ plt.ylabel("Accuracy")
 plt.ylim([0.8, 1.0])
 plt.show()
 # if plt.show is not working, try opening the result of plt.savefig instead!
-plt.savefig("dtree-variance.png")
+# plt.savefig("dtree-variance.png") # This doesn't work well on repl.it.
 
 TODO("1. understand/compare the bounds generated between the two methods.")
 TODO("2. Do one of the two following experiments.")
