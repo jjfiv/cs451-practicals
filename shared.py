@@ -45,3 +45,12 @@ def dataset_local_path(name: str) -> str:
         raise ValueError("No such dataset... {}; should you git pull?".format(name))
     assert os.path.exists(destination)
     return destination
+
+
+def test_download():
+    import json
+
+    lpath = dataset_local_path("poetry_id.jsonl")
+    with open(lpath) as fp:
+        first = json.loads(next(fp))
+        assert first["book"] == "aceptadaoficialmente00gubirich"
