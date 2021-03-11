@@ -2,6 +2,35 @@
 import os
 import urllib.request
 import sys
+from typing import List, Dict, Optional, Any
+from numpy.typing import ArrayLike
+from sklearn.base import ClassifierMixin
+from sklearn.utils import resample
+from sklearn.metrics import accuracy_score
+import random
+
+
+def bootstrap_accuracy(
+    f: ClassifierMixin,
+    X: ArrayLike,
+    y: ArrayLike,
+    num_samples: int = 100,
+    random_state: int = random.randint(0, 2 ** 32 - 1),
+) -> List[float]:
+    """
+    Take the classifier ``f``, and compute it's bootstrapped accuracy over the dataset ``X``,``y``.
+    Generate ``num_samples`` samples; and seed the resampler with ``random_state``.
+    """
+    dist: List[float] = []
+    y_pred = f.predict(X)  # type:ignore (predict not on ClassifierMixin)
+    # do the bootstrap:
+    for trial in range(num_samples):
+        sample_pred, sample_truth = resample(
+            y_pred, y, random_state=trial + random_state
+        )  # type:ignore
+        score = accuracy_score(y_true=sample_truth, y_pred=sample_pred)  # type:ignore
+        dist.append(score)
+    return dist
 
 
 def TODO(for_what: str) -> None:
@@ -54,3 +83,34 @@ def test_download():
     with open(lpath) as fp:
         first = json.loads(next(fp))
         assert first["book"] == "aceptadaoficialmente00gubirich"
+
+
+def simple_boxplot(
+    data: Dict[str, List[float]],
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    show: bool = True,
+    save: Optional[str] = None,
+) -> Any:
+    """ Create a simple set of named boxplots. """
+    import matplotlib.pyplot as plt
+
+    box_names = []
+    box_dists = []
+    for (k, v) in data.items():
+        box_names.append(k)
+        box_dists.append(v)
+    plt.boxplot(box_dists)
+    plt.xticks(ticks=range(1, len(box_names) + 1), labels=box_names)
+    if title:
+        plt.title(title)
+    if xlabel:
+        plt.xlabel(xlabel)
+    if ylabel:
+        plt.ylabel(ylabel)
+    if save:
+        plt.savefig(save)
+    if show:
+        plt.show()
+    return plt
