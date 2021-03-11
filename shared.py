@@ -2,8 +2,9 @@
 import os
 import urllib.request
 import sys
+import typing
 from typing import List, Dict, Optional, Any
-from numpy.typing import ArrayLike
+
 from sklearn.base import ClassifierMixin
 from sklearn.utils import resample
 from sklearn.metrics import accuracy_score
@@ -12,8 +13,8 @@ import random
 
 def bootstrap_accuracy(
     f: ClassifierMixin,
-    X: ArrayLike,
-    y: ArrayLike,
+    X,  # numpy array
+    y,  # numpy array
     num_samples: int = 100,
     random_state: int = random.randint(0, 2 ** 32 - 1),
 ) -> List[float]:
