@@ -164,7 +164,7 @@ DTree:
 """
 TODO("2. Explore why DecisionTrees are not beating linear models. Answer one of:")
 TODO("2.A. Is it a bad depth?")
-TODO("2.B. Do RF do better?")
+TODO("2.B. Do Random Forests do better?")
 TODO(
     "2.C. Is it randomness? Use simple_boxplot and bootstrap_auc/bootstrap_acc to see if the differences are meaningful!"
 )
