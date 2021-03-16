@@ -66,13 +66,6 @@ joined_data: Dict[str, JoinedWikiData] = {}
 
 # TODO("1. create a list of JoinedWikiData from the ``pages`` and ``labels`` lists.")
 # This challenge has some very short solutions, so it's more conceptual. If you're stuck after ~10-20 minutes of thinking, ask!
-for p in pages:
-    joined_data[p.wiki_id] = JoinedWikiData(
-        p.wiki_id, is_literary=False, title=p.title, body=p.body
-    )
-for l in labels:
-    joined_data[l.wiki_id].is_literary = l.is_literary
-
 ############### Problem 1 ends here ###############
 
 # Make sure it is solved correctly!
