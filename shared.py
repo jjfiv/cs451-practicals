@@ -2,13 +2,40 @@
 import os
 import urllib.request
 import sys
-import typing
 from typing import List, Dict, Optional, Any
 
 from sklearn.base import ClassifierMixin
 from sklearn.utils import resample
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score
 import random
+
+
+def bootstrap_auc(
+    f: Any,  # sklearn classifier
+    X,  # numpy array
+    y,  # numpy array
+    num_samples: int = 100,
+    random_state: int = random.randint(0, 2 ** 32 - 1),
+    truth_label: int = 1,
+) -> List[float]:
+    """
+    Take the classifier ``f``, and compute it's bootstrapped AUC over the dataset ``X``,``y``.
+    Generate ``num_samples`` samples; and seed the resampler with ``random_state``.
+    """
+    dist: List[float] = []
+    if hasattr(f, "decision_function"):
+        y_scores = f.decision_function(X)
+        # type:ignore (predict not on ClassifierMixin)
+    else:
+        y_scores = f.predict_proba(X)[:, truth_label]
+    # do the bootstrap:
+    for trial in range(num_samples):
+        sample_pred, sample_truth = resample(
+            y_scores, y, random_state=trial + random_state
+        )  # type:ignore
+        score = roc_auc_score(y_true=sample_truth, y_score=sample_pred)  # type:ignore
+        dist.append(score)
+    return dist
 
 
 def bootstrap_accuracy(
@@ -55,8 +82,8 @@ def __download_file(url: str, path: str):
     # try connecting before creating output file...
     with urllib.request.urlopen(url) as f:
         # create output file and download the rest.
-        with open(path, "w") as out:
-            out.write(f.read().decode("utf-8"))
+        with open(path, "wb") as out:
+            out.write(f.read())
 
 
 def dataset_local_path(name: str) -> str:
@@ -71,6 +98,10 @@ def dataset_local_path(name: str) -> str:
         __download_file(
             "http://ciir.cs.umass.edu/downloads/poetry/id_datasets.jsonl", destination
         )
+    elif name == "tiny-wiki.jsonl.gz":
+        __download_file("http://static.jjfoley.me/tiny-wiki.jsonl.gz", destination)
+    elif name == "tiny-wiki-labels.jsonl":
+        __download_file("http://static.jjfoley.me/tiny-wiki-labels.jsonl", destination)
     else:
         raise ValueError("No such dataset... {}; should you git pull?".format(name))
     assert os.path.exists(destination)
