@@ -98,23 +98,16 @@ def dataset_local_path(name: str) -> str:
         __download_file(
             "http://ciir.cs.umass.edu/downloads/poetry/id_datasets.jsonl", destination
         )
-    elif name == "tiny-wiki.jsonl.gz":
-        __download_file("http://static.jjfoley.me/tiny-wiki.jsonl.gz", destination)
-    elif name == "tiny-wiki-labels.jsonl":
-        __download_file("http://static.jjfoley.me/tiny-wiki-labels.jsonl", destination)
+    elif name in [
+        "lit-wiki-2020.jsonl.gz",
+        "tiny-wiki.jsonl.gz",
+        "tiny-wiki-labels.jsonl",
+    ]:
+        __download_file("http://static.jjfoley.me/{}".format(name), destination)
     else:
         raise ValueError("No such dataset... {}; should you git pull?".format(name))
     assert os.path.exists(destination)
     return destination
-
-
-def test_download():
-    import json
-
-    lpath = dataset_local_path("poetry_id.jsonl")
-    with open(lpath) as fp:
-        first = json.loads(next(fp))
-        assert first["book"] == "aceptadaoficialmente00gubirich"
 
 
 def simple_boxplot(
@@ -134,15 +127,42 @@ def simple_boxplot(
         box_names.append(k)
         box_dists.append(v)
     plt.boxplot(box_dists)
-    plt.xticks(ticks=range(1, len(box_names) + 1), labels=box_names)
+    plt.xticks(
+        rotation=30,
+        horizontalalignment="right",
+        ticks=range(1, len(box_names) + 1),
+        labels=box_names,
+    )
     if title:
         plt.title(title)
     if xlabel:
         plt.xlabel(xlabel)
     if ylabel:
         plt.ylabel(ylabel)
+    plt.tight_layout()
     if save:
         plt.savefig(save)
     if show:
         plt.show()
     return plt
+
+
+# TESTS:
+
+
+def test_download_poetry():
+    import json
+
+    lpath = dataset_local_path("poetry_id.jsonl")
+    with open(lpath) as fp:
+        first = json.loads(next(fp))
+        assert first["book"] == "aceptadaoficialmente00gubirich"
+
+
+def test_download_wiki():
+    import json
+
+    lpath = dataset_local_path("tiny-wiki-labels.jsonl")
+    with open(lpath) as fp:
+        first = json.loads(next(fp))
+        print(first)
