@@ -159,7 +159,10 @@ print("rand-size: {}".format(is_random.total))
 
 
 def score_words(
-    words: List[str], positive: CountLanguageModel, background: CountLanguageModel
+    words: List[str],
+    linear: float,
+    positive: CountLanguageModel,
+    background: CountLanguageModel,
 ) -> float:
     score = 0.0
     # Compute log-product of word-probabilities:
@@ -185,7 +188,7 @@ def score_words(
 for linear in [0.1, 0.2, 0.3, 0.4, 0.5, 0.9]:
     scores = []
     for ex in ex_vali:
-        score = score_words(text_to_words(ex), is_positive, is_random)
+        score = score_words(text_to_words(ex), linear, is_positive, is_random)
         scores.append(score)
 
     # Note that there's no accuracy because I haven't figured out beta...
