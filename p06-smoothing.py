@@ -57,13 +57,13 @@ RANDOM_SEED = 1234
 ex_tv, ex_test, y_tv, y_test = train_test_split(
     examples,
     ys,
-    train_size=0.9,
+    train_size=0.75,
     shuffle=True,
     random_state=RANDOM_SEED,
 )
 # split off train, validate from (tv) pieces.
 ex_train, ex_vali, y_train, y_vali = train_test_split(
-    ex_tv, y_tv, train_size=0.9, shuffle=True, random_state=RANDOM_SEED
+    ex_tv, y_tv, train_size=0.66, shuffle=True, random_state=RANDOM_SEED
 )
 
 #%% Analyze Text
