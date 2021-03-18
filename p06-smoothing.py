@@ -3,7 +3,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.utils import resample
 import math
 
-# new helpers:
+# my helpers!
 from shared import (
     dataset_local_path,
     bootstrap_auc,
@@ -18,7 +18,7 @@ from typing import Dict, List
 
 #%% load up the data
 # Try 'POETRY'
-dataset = "POETRY"
+dataset = "WIKI"
 examples: List[str] = []
 ys: List[bool] = []
 
@@ -112,7 +112,7 @@ for alpha in [0.1, 1.0, 10.0]:
             m.score(X_vali, y_vali), roc_auc_score(y_score=scores, y_true=y_vali)
         )
     )
-    print("What I called log(beta)={}", m.class_log_prior_)
+    print("What I called log(beta)={}".format(m.class_log_prior_[1]))
     results["MNB(alpha={})".format(alpha)] = bootstrap_auc(m, X_vali, y_vali)
 
 
@@ -124,8 +124,12 @@ import typing
 
 @dataclass
 class CountLanguageModel:
+    """ The number of times each word has been observed. """
+
     counts: typing.Counter[str] = field(default_factory=Counter)
+    """ The total number of observed words (any word)"""
     total: int = 0
+    # Don't need an alpha
 
     def add_example(self, words: List[str]) -> None:
         for word in words:
@@ -136,7 +140,9 @@ class CountLanguageModel:
         return self.counts[word] / self.total
 
 
-is_literary = CountLanguageModel()
+# Make one of these for the positive class:
+is_positive = CountLanguageModel()
+# Make one of these for ALL documents.
 is_random = CountLanguageModel()
 
 # Train these two model pieces:
@@ -146,10 +152,32 @@ for y, ex in zip(y_train, ex_train):
     is_random.add_example(words)
     # but only positive go in positive:
     if y:
-        is_literary.add_example(words)
+        is_positive.add_example(words)
 
-print("lit: {}".format(is_literary.total))
-print("rand: {}".format(is_random.total))
+print("positive-size: {}".format(is_positive.total))
+print("rand-size: {}".format(is_random.total))
+
+
+def score_words(
+    words: List[str], positive: CountLanguageModel, background: CountLanguageModel
+) -> float:
+    score = 0.0
+    # Compute log-product of word-probabilities:
+    for word in words:
+        # prob-yes!
+        prob_positive = positive.prob(word)
+        # prob-no!
+        prob_negative = background.prob(word)
+        # words that are only in vali/test:
+        if prob_positive == 0.0 and prob_negative == 0.0:
+            continue
+
+        # mix the positive and negative together (to avoid prob_positive being a zero)
+        smoothed_positive = (prob_positive * linear) + (prob_negative * (1 - linear))
+        # multiply up P(yes) / P(no) but logged!
+        score += math.log(smoothed_positive) - math.log(prob_negative)
+    return score
+
 
 #
 # The linear parameter is traditionally a non-zero, non-one probability:
@@ -157,21 +185,16 @@ print("rand: {}".format(is_random.total))
 for linear in [0.1, 0.2, 0.3, 0.4, 0.5, 0.9]:
     scores = []
     for ex in ex_vali:
-        score = 0.0
-        denom = 0
-        for word in text_to_words(ex):
-            prob_positive = is_literary.prob(word)
-            prob_negative = is_random.prob(word)
-            if prob_positive == 0.0 and prob_negative == 0.0:
-                continue
-            smoothed_positive = (prob_positive * linear) + (
-                prob_negative * (1 - linear)
-            )
-            score += math.log(smoothed_positive) - math.log(prob_negative)
-            denom += 1
+        score = score_words(text_to_words(ex), is_positive, is_random)
         scores.append(score)
-    print(roc_auc_score(y_score=scores, y_true=y_vali))
-    # bootstrap AUC:
+
+    # Note that there's no accuracy because I haven't figured out beta...
+    print(
+        "Linear[{}] AUC={:.3}".format(
+            linear, roc_auc_score(y_score=scores, y_true=y_vali)
+        )
+    )
+    # bootstrap AUC: (doing this manually because the helper function doesn't accept scores out of nowhere!)
     dist = []
     # do the bootstrap:
     for trial in range(100):
@@ -185,3 +208,19 @@ for linear in [0.1, 0.2, 0.3, 0.4, 0.5, 0.9]:
 
 #%% Boxplot all AUC results:
 simple_boxplot(results, ylabel="AUC", save="{}-text-AUC.png".format(dataset))
+
+
+from shared import TODO
+
+TODO(
+    "1. Explore alpha and linear parameters; make a decision about what a good choice for this dataset might be."
+)
+
+# 2 is once again a choose-your-own:
+TODO(
+    "2A. Explore ngrams, lowercase v. uppercase, etc. (how changing CountVectorizer changes performance, or not)"
+)
+TODO(
+    "2B. Explore the difference between today's approaches to the WIKI dataset and yesterday's."
+)
+TODO("2C. Explore the differences between the WIKI dataset and the POETRY dataset.")
