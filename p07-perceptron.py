@@ -2,7 +2,7 @@
 from collections import defaultdict
 from sklearn import metrics
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import Perceptron
+from sklearn.linear_model import Perceptron, SGDClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from tqdm import tqdm
@@ -17,7 +17,7 @@ from shared import (
 # stdlib:
 from dataclasses import dataclass, field
 import json
-from typing import Any, List, DefaultDict
+from typing import List, DefaultDict
 
 
 #%% load up the data
@@ -63,6 +63,9 @@ rX_train, rX_vali, y_train, y_vali = train_test_split(
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
+# TODO: Exploration 2: What normalization is best for your models?
+# THINK: Why didn't we normalize for decision trees?
+#
 # These are the three approaches to scaling I see in practice: variance / standard-deviation, min/max, nothing.
 # This replaces the X / 1000 hack we did a few weeks ago.
 norm = "max"
@@ -85,12 +88,14 @@ print(X_train.shape, X_vali.shape, X_test.shape)
 
 # Delete these generic variables that we really shouldn't use anymore now that the data is fully-prepared.
 del X, y, ys, rX_train, rX_vali, rX_test
-#%%
+
+
+#%% Define and Train Models
 
 
 @dataclass
 class LinearModel:
-    weights: np.ndarray  # or np.array
+    weights: np.ndarray  # note we can't specify this is 1-dimensional
     bias: float = 0.0
 
     def decision_function(self, X: np.ndarray) -> np.ndarray:
@@ -211,7 +216,6 @@ def train_averaged_perceptron(
     return LinearModel(w_avg, b_avg)
 
 
-# %%
 model = train_perceptron(y_train, X_train, y_vali, X_vali, num_iter=1000)
 print("P. Train-Accuracy: {:.3}".format(model.score(X_train, y_train)))
 print("P. Vali-Accuracy: {:.3}".format(model.score(X_vali, y_vali)))
@@ -231,13 +235,20 @@ for iter in tqdm(range(1000)):
 print("skP. Train-Accuracy: {:.3}".format(skP.score(X_train, y_train)))
 print("skP. Vali-Accuracy: {:.3}".format(skP.score(X_vali, y_vali)))
 
-## Exploration 1: Try a MLP (Multi-Layer Perceptron).
-mlp = MLPClassifier(hidden_layer_sizes=(32,))
 
-
-plots = [("skP-Train-Accuracy", "skP-")]
+## TODO Exploration 1: use a loop around partial-fit to generate another graph!
 #
-# This is the first time we're seeing a line plot.
+## TODO Exploration 1A: Try a MLP (Multi-Layer Perceptron).
+mlp = MLPClassifier(hidden_layer_sizes=(32,))
+## TODO Exploration 1B: Try another Linear Model
+sgdc = SGDClassifier()
+
+## TODO Think: Why can't we make a graph like this for DecisionTreeClassifier?
+
+#%% Plot!
+
+#
+# This is the first time we're seeing how to make a line plot.
 # Also the first time we're creating plots in a loop! (Gets too busy if they're all on the same chart, IMO)
 # Matplotlib *does* have subplots, but they're so fiddly.
 #
@@ -246,7 +257,7 @@ for key, dataset in learning_curves.items():
     # line-plot:
     plt.plot(xs, dataset.train, label="{} Train".format(key), alpha=0.7)
     plt.plot(xs, dataset.validation, label="{} Validate".format(key), alpha=0.7)
-    # scatter-plot:
+    # scatter-plot: (maybe these look nicer to you?)
     # plt.scatter(xs, points, label=key, alpha=0.7, marker=".")
     plt.ylim((0.75, 1.0))
     plt.title("{} Learning Curves [norm={}]".format(key, norm))
