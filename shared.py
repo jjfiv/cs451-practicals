@@ -2,6 +2,7 @@
 import os
 import urllib.request
 import sys
+import zipfile
 from typing import List, Dict, Optional, Any
 
 from sklearn.base import ClassifierMixin
@@ -89,6 +90,15 @@ def __download_file(url: str, path: str):
 def dataset_local_path(name: str) -> str:
     __create_data_directory()
     destination = os.path.join("data", name)
+    if name == "AirQualityUCI.csv":
+        zip_path = os.path.join("data", "AirQualityUCI.zip")
+        __download_file(
+            "http://archive.ics.uci.edu/ml/machine-learning-databases/00360/AirQualityUCI.zip",
+            zip_path,
+        )
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extract(name, "data")
+        return destination
     if name == "forest-fires.csv":
         __download_file(
             "http://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv",
