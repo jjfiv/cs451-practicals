@@ -86,6 +86,7 @@ plt.xlabel("Percent Training Data")
 plt.ylabel("Mean Accuracy")
 plt.xlim([0, 100])
 plt.title("Shaded Accuracy Plot")
+plt.savefig("graphs/p09-area-Accuracy.png")
 plt.show()
 
 
@@ -95,7 +96,7 @@ simple_boxplot(
     "Learning Curve",
     xlabel="Percent Training Data",
     ylabel="Accuracy",
-    save="graphs/p09-curve-Accuracy.png",
+    save="graphs/p09-boxplots-Accuracy.png",
 )
 
 # TODO: (practical tasks)
