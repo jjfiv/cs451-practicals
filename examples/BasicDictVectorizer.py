@@ -45,21 +45,28 @@ class BasicDictVectorizer:
         for row in xs:
             for key, val in row.items():
                 if feature_names.get(key, "unknown") == "categorical":
+                    # skip features you've already seen.
                     continue
                 kind = guess_kind(val)
                 if key not in feature_names:
+                    print("Found new feature, {}, which is {}.".format(key, kind))
                     feature_names[key] = kind
                 else:
-                    feature_names[key] = merge_kinds(feature_names[key], kind)
+                    new_kind = merge_kinds(feature_names[key], kind)
+                    if new_kind != feature_names[key]:
+                        print("Decided old feature {} is now {}.".format(key, new_kind))
+                    feature_names[key] = new_kind
         # collect columns to use:
         self.feature_names_ = []
         for fname, fkind in feature_names.items():
             if fkind == "categorical":
                 values = set(str(row[fname]) for row in xs if fname in row)
                 self.categoricals[fname] = values
+                print("Feature {} may hold values {}".format(fname, values))
                 for v in values:
                     self.feature_names_.append("{}={}".format(fname, v))
             else:
+                print("Feature {} is numeric.".format(fname))
                 self.feature_names_.append(fname)
         # sort!
         self.feature_names_ = sorted(self.feature_names_)
@@ -76,6 +83,7 @@ class BasicDictVectorizer:
                 key = fname
                 # if it's categorical
                 if fname in self.categoricals:
+                    # combine fname and fval to get which column it should be.
                     key = "{}={}".format(fname, fval)
                     val = 1
                 else:
@@ -93,7 +101,7 @@ numberer = BasicDictVectorizer()
 train_data = [
     {"x": 3, "y": 7},
     {"z": 1, "cat": True, "color": "red"},
-    {"color": "blue"},
+    {"color": "blue", "z": "2"},
     {"color": "red", "z": 3},
 ]
 
