@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any
 
 from sklearn.base import ClassifierMixin
 from sklearn.utils import resample
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, roc_auc_score, r2_score
 import random
 
 
@@ -34,9 +34,54 @@ def bootstrap_auc(
         sample_pred, sample_truth = resample(
             y_scores, y, random_state=trial + random_state
         )  # type:ignore
-        score = roc_auc_score(y_true=sample_truth, y_score=sample_pred)  # type:ignore
+        score = roc_auc_score(y_true=sample_truth, y_score=sample_pred)
         dist.append(score)
     return dist
+
+
+def bootstrap_measure(
+    f,
+    X,  # numpy array
+    y,  # numpy array
+    num_samples: int = 100,
+    random_state: int = random.randint(0, 2 ** 32 - 1),
+    predict=lambda m, X: m.predict(X),
+    measure=lambda y_true, y_pred: accuracy_score(y_true, y_pred),
+) -> List[float]:
+    """
+    Take the classifier ``f``, and compute it's bootstrapped accuracy over the dataset ``X``,``y``.
+    Generate ``num_samples`` samples; and seed the resampler with ``random_state``.
+    """
+    dist: List[float] = []
+    y_pred = predict(f, X)
+    # do the bootstrap:
+    for trial in range(num_samples):
+        sample_pred, sample_truth = resample(
+            y_pred, y, random_state=trial + random_state
+        )  # type:ignore
+        score = measure(y_true=sample_truth, y_pred=sample_pred)
+        dist.append(score)
+    return dist
+
+
+def bootstrap_r2(
+    f: Any,
+    X: Any,
+    y: Any,
+    num_samples: int = 100,
+    random_state: int = random.randint(0, 2 ** 32 - 1),
+) -> List[float]:
+    def regress_eval(y_true, y_pred) -> float:
+        return r2_score(y_true=y_true, y_pred=y_pred)
+
+    return bootstrap_measure(
+        f,
+        X,
+        y,
+        num_samples=num_samples,
+        random_state=random_state,
+        measure=regress_eval,
+    )
 
 
 def bootstrap_accuracy(
@@ -50,16 +95,15 @@ def bootstrap_accuracy(
     Take the classifier ``f``, and compute it's bootstrapped accuracy over the dataset ``X``,``y``.
     Generate ``num_samples`` samples; and seed the resampler with ``random_state``.
     """
-    dist: List[float] = []
-    y_pred = f.predict(X)  # type:ignore (predict not on ClassifierMixin)
-    # do the bootstrap:
-    for trial in range(num_samples):
-        sample_pred, sample_truth = resample(
-            y_pred, y, random_state=trial + random_state
-        )  # type:ignore
-        score = accuracy_score(y_true=sample_truth, y_pred=sample_pred)  # type:ignore
-        dist.append(score)
-    return dist
+    return bootstrap_measure(
+        f,
+        X,
+        y,
+        num_samples=num_samples,
+        random_state=random_state,
+        predict=lambda f, X: f.predict(X),
+        measure=accuracy_score,
+    )
 
 
 def TODO(for_what: str) -> None:
@@ -118,6 +162,43 @@ def dataset_local_path(name: str) -> str:
         raise ValueError("No such dataset... {}; should you git pull?".format(name))
     assert os.path.exists(destination)
     return destination
+
+
+def simple_violins(
+    data: Dict[str, List[float]],
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    show: bool = True,
+    save: Optional[str] = None,
+) -> Any:
+    """ Create a simple set of named boxplots. """
+    import matplotlib.pyplot as plt
+
+    box_names = []
+    box_dists = []
+    for (k, v) in data.items():
+        box_names.append(k)
+        box_dists.append(v)
+    plt.violinplot(box_dists)
+    plt.xticks(
+        rotation=30,
+        horizontalalignment="right",
+        ticks=range(1, len(box_names) + 1),
+        labels=box_names,
+    )
+    if title:
+        plt.title(title)
+    if xlabel:
+        plt.xlabel(xlabel)
+    if ylabel:
+        plt.ylabel(ylabel)
+    plt.tight_layout()
+    if save:
+        plt.savefig(save)
+    if show:
+        plt.show()
+    return plt
 
 
 def simple_boxplot(
