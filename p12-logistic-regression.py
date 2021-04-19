@@ -2,68 +2,24 @@
 from dataclasses import dataclass, field
 import numpy as np
 from sklearn import metrics
-from sklearn.model_selection import train_test_split
-from shared import (
-    dataset_local_path,
-)
-import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import random
-from typing import List, Tuple, Dict, Optional
-import pandas as pd
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+from typing import List, Dict
 from sklearn.utils import resample
-from scipy.sparse import hstack
 from scipy.special import expit
+from shared import bootstrap_auc
 
 # start off by seeding random number generators:
 RANDOM_SEED = 12345
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-#%%
+# import data; choose feature space
+from dataset_poetry import y_train, Xd_train, y_vali, Xd_vali
 
-from shared import bootstrap_auc, dataset_local_path
-
-df: pd.DataFrame = pd.read_json(dataset_local_path("poetry_id.jsonl"), lines=True)
-
-features = pd.json_normalize(df.features)
-features = features.join([df.poetry, df.words])
-features.head()
-
-tv_f, test_f = train_test_split(features, test_size=0.25, random_state=RANDOM_SEED)
-train_f, vali_f = train_test_split(tv_f, test_size=0.25, random_state=RANDOM_SEED)
-
-textual = TfidfVectorizer(max_df=0.75, min_df=2, dtype=np.float32)
-
-numeric = make_pipeline(DictVectorizer(sparse=False), StandardScaler())
-
-
-def split(df: pd.DataFrame, fit: bool = False) -> Tuple[np.ndarray, np.ndarray]:
-    global numeric, textual
-    y = np.array(df.pop("poetry").values)
-    text = df.pop("words")
-    if fit:
-        textual.fit(text)
-        numeric.fit(df.to_dict("records"))
-    x_text = textual.transform(text)
-    x_num = numeric.transform(df.to_dict("records"))
-    x_merged = np.asarray(np.hstack([x_num, x_text.todense()]))
-    return (y, x_num)
-
-
-y_train, X_train = split(train_f, fit=True)
-y_vali, X_vali = split(vali_f)
-
-print(X_train.shape)
-print(X_vali.shape)
+X_train = Xd_train["numeric"]
+X_vali = Xd_vali["numeric"]
 
 #%%
 from sklearn.linear_model import LogisticRegression
