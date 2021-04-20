@@ -23,12 +23,14 @@ def bootstrap_auc(
     Take the classifier ``f``, and compute it's bootstrapped AUC over the dataset ``X``,``y``.
     Generate ``num_samples`` samples; and seed the resampler with ``random_state``.
     """
+    (N, D) = X.shape
     dist: List[float] = []
     if hasattr(f, "decision_function"):
         y_scores = f.decision_function(X)
         # type:ignore (predict not on ClassifierMixin)
     else:
-        y_scores = f.predict_proba(X)[:, truth_label]
+        y_scores = f.predict_proba(X)[:, truth_label].ravel()
+
     # do the bootstrap:
     for trial in range(num_samples):
         sample_pred, sample_truth = resample(
@@ -143,7 +145,12 @@ def dataset_local_path(name: str) -> str:
         with zipfile.ZipFile(zip_path) as zf:
             zf.extract(name, "data")
         return destination
-    if name == "forest-fires.csv":
+    elif name == "clickbait.csv.gz":
+        __download_file(
+            "https://drive.google.com/uc?export=download&id=10NKt-ct-TaP_cXwVsZpSH_XrdVCXXaqY",
+            destination,
+        )
+    elif name == "forest-fires.csv":
         __download_file(
             "http://archive.ics.uci.edu/ml/machine-learning-databases/forest-fires/forestfires.csv",
             destination,
