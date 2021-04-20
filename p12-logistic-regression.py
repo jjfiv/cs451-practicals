@@ -48,7 +48,7 @@ class LogisticRegressionModel:
         # Matrix multiplication; sprinkle transpose and assert to get the shapes you want (or remember Linear Algebra)... or both!
         output = np.dot(self.weights[:D].transpose(), X.transpose())
         assert output.shape == (1, N)
-        # now add bias and put it through the 'expit' function.
+        # now add bias and put it through the 'S'/sigmoid/'expit' function.
         return np.array(expit(output + self.weights[-1])).ravel()
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -82,36 +82,8 @@ class ModelTrainingCurve:
 learning_curves: Dict[str, ModelTrainingCurve] = {}
 
 
-def train_linear_regression_gd(name: str, num_iter=100):
-    plot = ModelTrainingCurve()
-    learning_curves[name] = plot
-
-    m = LogisticRegressionModel.random(D)
-    m.weights[D] = np.mean(y_train)
-    alpha = 0.1
-
-    pbar = tqdm(range(num_iter), total=num_iter, desc=name)
-    for _iter in pbar:
-        y_hat = m.decision_function(X_train)
-        y_diffs = y_hat - y_train
-
-        # look at all the predictions to compute our derivative:
-        gradient = np.zeros((D + 1, 1))
-        for i in range(N):
-            x_vec = X_train[i, :].reshape((D, 1))
-            y_err = float(y_diffs[i])
-            # update weights; each instance is weighted by its err:
-            gradient[:D] += y_err * x_vec
-            gradient[D] += y_err * 1  # bias is always 1
-
-        # take an alpha-sized step in the negative direction ('down')
-        m.weights += -alpha * (gradient / N)
-
-        # record performance:
-        plot.add_sample(m, X_train, y_train, X_vali, y_vali)
-
-
 def compute_gradient_update(m, X, y) -> np.ndarray:
+    """ Predict using m over X; compare to y, calculate the gradient update."""
     (N, D) = X.shape
     y_hat = m.decision_function(X)
     y_diffs = np.array(y_hat - y)
@@ -130,7 +102,7 @@ def compute_gradient_update(m, X, y) -> np.ndarray:
     return -(gradient / N)
 
 
-def train_linear_regression_gd_opt(name: str, num_iter=100):
+def train_logistic_regression_gd(name: str, num_iter=100):
     plot = ModelTrainingCurve()
     learning_curves[name] = plot
 
@@ -138,7 +110,7 @@ def train_linear_regression_gd_opt(name: str, num_iter=100):
     # Alpha is the 'learning rate'.
     alpha = 0.1
 
-    for iteration in tqdm(range(num_iter), total=num_iter, desc=name):
+    for _ in tqdm(range(num_iter), total=num_iter, desc=name):
         # Each step is scaled by alpha, to control how fast we move, overall:
         m.weights += alpha * compute_gradient_update(m, X_train, y_train)
         # record performance:
@@ -146,58 +118,18 @@ def train_linear_regression_gd_opt(name: str, num_iter=100):
     return m
 
 
-def ideal_sgd(name: str, num_iter=100):
-    plot = ModelTrainingCurve()
-    learning_curves[name] = plot
-
-    m = LogisticRegressionModel.random(D)
-    # Alpha is the 'learning rate'.
-    alpha = 0.1
-
-    for iteration in tqdm(range(num_iter), total=num_iter, desc=name):
-        for i in range(N):
-            # Each step is scaled by alpha, to control how fast we move, overall:
-            m.weights += alpha * compute_gradient_update(m, X_train[i, :], y_train[i])
-        # record performance:
-        plot.add_sample(m, X_train, y_train, X_vali, y_vali)
-    return m
-
-
-m = train_linear_regression_gd_opt("LR-GD", num_iter=2000)
+m = train_logistic_regression_gd("LR-GD", num_iter=2000)
 print("LR-GD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
 print("LR-GD Acc: {:.3}".format(m.score(X_vali, y_vali)))
 
 
-def shuffle_slide_sgd(name, plot, num_iter, minibatch_size=512):
-    m = LogisticRegressionModel.random(D)
-    alpha = 0.1
-
-    order = list(range(N))
-    for _iter in tqdm(range(num_iter), total=num_iter, desc=name):
-        # shuffle:
-        random.shuffle(order)
-        # loop over the size of the dataset in steps of 512
-        for start in range(0, N, minibatch_size):
-            # use the next contiguous bit:
-            minibatch_end = min(N, start + minibatch_size)
-            mb_idx = np.array([order[i] for i in range(start, minibatch_end)])
-            # our sampled dataset:
-            X_mb = X_train[mb_idx, :]
-            y_mb = y_train[mb_idx]
-            # update weights
-            m.weights += alpha * compute_gradient_update(m, X_mb, y_mb)
-
-        # record performance:
-        plot.add_sample(m, X_train, y_train, X_vali, y_vali)
-
-
-def train_linear_regression_sgd_opt(name: str, num_iter=100, minibatch_size=512):
+def train_logistic_regression_sgd_opt(name: str, num_iter=100, minibatch_size=512):
+    """ This is bootstrap-sampling minibatch SGD """
     plot = ModelTrainingCurve()
     learning_curves[name] = plot
 
     m = LogisticRegressionModel.random(D)
     alpha = 0.1
-
     n_samples = max(1, N // minibatch_size)
 
     for _ in tqdm(range(num_iter), total=num_iter, desc=name):
@@ -209,12 +141,13 @@ def train_linear_regression_sgd_opt(name: str, num_iter=100, minibatch_size=512)
     return m
 
 
-m = train_linear_regression_sgd_opt("LR-SGD", num_iter=2000)
+m = train_logistic_regression_sgd_opt("LR-SGD", num_iter=2000)
 print("LR-SGD AUC: {:.3}".format(np.mean(bootstrap_auc(m, X_vali, y_vali))))
 print("LR-SGD Acc: {:.3}".format(m.score(X_vali, y_vali)))
 
-import matplotlib.pyplot as plt
 
+## Create training curve plots:
+import matplotlib.pyplot as plt
 
 for key, dataset in learning_curves.items():
     xs = np.array(list(range(len(dataset.train))))
@@ -227,6 +160,7 @@ plt.tight_layout()
 plt.savefig("graphs/p12-training-curves.png")
 plt.show()
 
+## Create validation curve plots:
 for key, dataset in learning_curves.items():
     xs = np.array(list(range(len(dataset.validation))))
     plt.plot(xs, dataset.validation, label="{}".format(key), alpha=0.7)
@@ -237,3 +171,24 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("graphs/p12-vali-curves.png")
 plt.show()
+
+
+# TODO:
+#
+# 1. pick SGD or GD (I recommend SGD)
+# 2. pick a smaller max_iter that gets good performance.
+
+# Do either A or B:
+
+# (A) Explore Learning Rates:
+#
+# 3. make ``alpha``, the learning rate, a parameter of the train function.
+# 4. make a graph including some faster and slower alphas:
+# .... alpha = [0.05, 0.1, 0.5, 1.0]
+# .... what do you notice?
+
+# (B) Explore 'Automatic/Early Stopping'
+#
+# 3. split the 'training' data into **another** validation set.
+# 4. modify the SGD/GD loop to keep track of loss/accuarcy on this mini validation set at each iteration.
+# 5. add a tolerance parameter, and stop looping when the loss/accuracy on the mini validation set stops going down.
