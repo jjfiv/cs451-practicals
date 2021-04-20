@@ -9,6 +9,7 @@ from typing import List, Dict
 from sklearn.utils import resample
 from scipy.special import expit
 from shared import bootstrap_auc
+from sklearn.model_selection import train_test_split
 
 # start off by seeding random number generators:
 RANDOM_SEED = 12345
