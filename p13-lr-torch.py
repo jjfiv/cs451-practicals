@@ -8,6 +8,9 @@ import random
 from shared import bootstrap_auc
 import matplotlib.pyplot as plt
 
+import torch
+from torch import nn, optim
+
 # start off by seeding random number generators:
 RANDOM_SEED = 12345
 random.seed(RANDOM_SEED)
@@ -34,18 +37,6 @@ def nearly_eq(x, y, tolerance=1e-6):
 
 
 #%%
-import torch
-import torch.nn
-import torch.optim
-
-
-class SigmoidClassifier(torch.nn.Module):
-    def __init__(self, D, num_classes=2):
-        super(SigmoidClassifier, self).__init__()
-        self.weights = torch.nn.Linear(D, num_classes, bias=True)
-
-    def forward(self, X):
-        return self.weights(X)
 
 
 (N, D) = X_train.shape
@@ -56,7 +47,7 @@ Xv = torch.from_numpy(X_vali).float()
 yv = torch.from_numpy(y_vali).long()
 
 
-def train(name: str, model, optimizer, objective, max_iter=5000):
+def train(name: str, model, optimizer, objective, max_iter=2000):
     train_losses = []
     vali_losses = []
     samples = []
@@ -78,6 +69,7 @@ def train(name: str, model, optimizer, objective, max_iter=5000):
             samples.append(it)
     model.eval()
 
+    # Predict on the Validation Set
     y_probs = model(Xv).detach().numpy()
     y_pred = (y_probs[:, 1] > 0.5).ravel()
     print(
@@ -100,38 +92,40 @@ def train(name: str, model, optimizer, objective, max_iter=5000):
     return model
 
 
-model = SigmoidClassifier(D)
-objective = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+# Actually train a LogisticRegression; just one 'Linear' layer.
+n_classes = len([0, 1])
+model = nn.Linear(D, n_classes, bias=True)
+objective = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
 train("logistic-regression", model, optimizer, objective)
 
-DROPOUT = 0.2
 
-
-def make_neural_net(D: int, hidden: List[int], num_classes: int = 2):
+def make_neural_net(D: int, hidden: List[int], num_classes: int = 2, dropout=0.2):
+    """ Using nn.Sequential; construct a list of layers that make this a neural-network. """
     layers = []
     for i, dim in enumerate(hidden):
         if i == 0:
-            layers.append(torch.nn.Linear(D, dim))
-            layers.append(torch.nn.Dropout(p=DROPOUT))
-            layers.append(torch.nn.ReLU())
+            layers.append(nn.Linear(D, dim))
+            layers.append(nn.Dropout(p=DROPOUT))
+            layers.append(nn.ReLU())
         else:
-            layers.append(torch.nn.Linear(hidden[i - 1], dim))
-            layers.append(torch.nn.Dropout(p=DROPOUT))
-            layers.append(torch.nn.ReLU())
-    layers.append(torch.nn.Linear(hidden[-1], num_classes))
-    return torch.nn.Sequential(*layers)
+            layers.append(nn.Linear(hidden[i - 1], dim))
+            layers.append(nn.Dropout(p=DROPOUT))
+            layers.append(nn.ReLU())
+    layers.append(nn.Linear(hidden[-1], num_classes))
+    return nn.Sequential(*layers)
 
 
 LEARNING_RATE = 0.1
+DROPOUT = 0.2  # randomly turn off this fraction of the neural-net while training.
 MOMENTUM = 0.9
 REGULARIZATION = 0.0  # try 0.1, 0.01, etc.
 
 # two hidden layers, 16 nodes, each.
-model = make_neural_net(D, [16, 16])
-objective = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(
+model = make_neural_net(D, [16, 16], dropout=DROPOUT)
+objective = nn.CrossEntropyLoss()
+optimizer = optim.SGD(
     model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=REGULARIZATION
 )
 
