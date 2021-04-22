@@ -15,6 +15,7 @@ from torch import nn, optim
 RANDOM_SEED = 12345
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
 
 # import data; choose feature space
 from dataset_poetry import y_train, Xd_train, y_vali, Xd_vali
