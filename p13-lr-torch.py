@@ -60,6 +60,7 @@ def train(name: str, model, optimizer, objective, max_iter=2000):
         loss.backward()
         optimizer.step()
 
+        # every 25 steps, sample validation performance.
         if it % 25 == 0:
             model.eval()
             y_probs = model(X).detach().numpy()
@@ -117,7 +118,16 @@ def make_neural_net(D: int, hidden: List[int], num_classes: int = 2, dropout=0.2
     return nn.Sequential(*layers)
 
 
-LEARNING_RATE = 0.1
+##
+# Lab TODO:
+# 0. In this version; consider commenting out other calls to train/fit!
+# 1. Investigate LEARNING_RATE, DROPOUT, MOMENTUM, REGULARIZATION.
+# 2. What do you think these variables change?
+# 3. Consider a shallower, wider network.
+#    - Changing [16,16] to something else... might require revisiting step 1.
+##
+
+LEARNING_RATE = 1.0
 DROPOUT = 0.2  # randomly turn off this fraction of the neural-net while training.
 MOMENTUM = 0.9
 REGULARIZATION = 0.0  # try 0.1, 0.01, etc.
@@ -129,4 +139,4 @@ optimizer = optim.SGD(
     model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=REGULARIZATION
 )
 
-train("neural_net", model, optimizer, objective)
+train("neural_net", model, optimizer, objective, max_iter=1000)
